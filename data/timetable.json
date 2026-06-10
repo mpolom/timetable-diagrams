@@ -1,0 +1,25 @@
+{
+  "stations": [
+    { "id": "COL", "name": "Colchester", "position": 0 },
+    { "id": "MAN", "name": "Manningtree", "position": 10 },
+    { "id": "IPS", "name": "Ipswich", "position": 25 }
+  ],
+  "trains": [
+    {
+      "id": "1A01",
+      "stops": [
+        { "station": "COL", "time": "08:00" },
+        { "station": "MAN", "time": "08:10" },
+        { "station": "IPS", "time": "08:25" }
+      ]
+    },
+    {
+      "id": "1B02",
+      "stops": [
+        { "station": "COL", "time": "08:05" },
+        { "station": "MAN", "time": "08:20" },
+        { "station": "IPS", "time": "08:40" }
+      ]
+    }
+  ]
+}
