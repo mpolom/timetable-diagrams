@@ -12,6 +12,143 @@ function roundUp(value, step) {
   return Math.ceil(value / step) * step;
 }
 
+function getTrainStyle(train, defaultColour) {
+  const baseColour = train.colour || defaultColour;
+
+  switch (train.style) {
+    case 'express':
+      return {
+        stroke: baseColour,
+        strokeWidth: 2,
+        dashArray: '8,4',
+        opacity: 1
+      };
+
+    case 'freight':
+      return {
+        stroke: train.colour || '#444444',
+        strokeWidth: 3,
+        dashArray: '2,2',
+        opacity: 0.95
+      };
+
+    case 'empty':
+      return {
+        stroke: train.colour || '#666666',
+        strokeWidth: 2,
+        dashArray: '6,3',
+        opacity: 0.7
+      };
+
+    case 'reference':
+      return {
+        stroke: train.colour || '#999999',
+        strokeWidth: 1.5,
+        dashArray: 'none',
+        opacity: 0.5
+      };
+
+    case 'normal':
+    default:
+      return {
+        stroke: baseColour,
+        strokeWidth: 2,
+        dashArray: 'none',
+        opacity: 1
+      };
+  }
+}
+
+function renderLegend(x, y) {
+  const legendItems = [
+    {
+      label: 'Normal',
+      style: { stroke: '#005ea5', strokeWidth: 2, dashArray: 'none', opacity: 1 }
+    },
+    {
+      label: 'Express',
+      style: { stroke: '#d4351c', strokeWidth: 2, dashArray: '8,4', opacity: 1 }
+    },
+    {
+      label: 'Freight',
+      style: { stroke: '#444444', strokeWidth: 3, dashArray: '2,2', opacity: 0.95 }
+    },
+    {
+      label: 'Empty stock',
+      style: { stroke: '#666666', strokeWidth: 2, dashArray: '6,3', opacity: 0.7 }
+    },
+    {
+      label: 'Reference',
+      style: { stroke: '#999999', strokeWidth: 1.5, dashArray: 'none', opacity: 0.5 }
+    }
+  ];
+
+  const rowHeight = 24;
+  const padding = 12;
+  const width = 180;
+  const height = padding * 2 + 24 + legendItems.length * rowHeight;
+
+  let content = `
+    <rect
+      x="${x}"
+      y="${y}"
+      width="${width}"
+      height="${height}"
+      fill="white"
+      stroke="#999"
+      stroke-width="1"
+      rx="6"
+      ry="6"
+    />
+    <text
+      x="${x + padding}"
+      y="${y + 18}"
+      font-size="12"
+      font-weight="600"
+      fill="#000"
+    >
+      Legend
+    </text>
+  `;
+
+  legendItems.forEach((item, index) => {
+    const rowY = y + 32 + index * rowHeight;
+
+    content += `
+      <line
+        x1="${x + padding}"
+        y1="${rowY}"
+        x2="${x + padding + 28}"
+        y2="${rowY}"
+        stroke="${item.style.stroke}"
+        stroke-width="${item.style.strokeWidth}"
+        stroke-dasharray="${item.style.dashArray}"
+        opacity="${item.style.opacity}"
+        stroke-linecap="round"
+      />
+      <circle
+        cx="${x + padding + 14}"
+        cy="${rowY}"
+        r="3"
+        fill="${item.style.stroke}"
+        stroke="white"
+        stroke-width="1"
+        opacity="${item.style.opacity}"
+      />
+      <text
+        x="${x + padding + 40}"
+        y="${rowY + 4}"
+        font-size="11"
+        fill="#000"
+      >
+        ${item.label}
+      </text>
+    `;
+  });
+
+  return content;
+}
+
 function generateSVG(timetable) {
   const width = 1400;
   const height = 800;
@@ -78,6 +215,18 @@ function generateSVG(timetable) {
     const x = timeScale(t);
     const isHour = t % 60 === 0;
     const isTenMinute = t % 10 === 0;
+    const isHalfHour = t % 30 === 0 && !isHour;
+
+    let stroke = '#e6e6e6';
+    let strokeWidth = 1;
+
+    if (isHour) {
+      stroke = '#999';
+      strokeWidth = 1.5;
+    } else if (isHalfHour) {
+      stroke = '#c7c7c7';
+      strokeWidth = 1.2;
+    }
 
     elements += `
       <line
@@ -85,8 +234,8 @@ function generateSVG(timetable) {
         y1="${margin.top}"
         x2="${x}"
         y2="${margin.top + plotHeight}"
-        stroke="${isHour ? '#999' : '#e6e6e6'}"
-        stroke-width="${isHour ? 1.5 : 1}"
+        stroke="${stroke}"
+        stroke-width="${strokeWidth}"
       />
     `;
 
@@ -145,7 +294,7 @@ function generateSVG(timetable) {
     </text>
   `;
 
-  const colours = [
+  const defaultColours = [
     '#005ea5',
     '#d4351c',
     '#00703c',
@@ -155,7 +304,8 @@ function generateSVG(timetable) {
   ];
 
   timetable.trains.forEach((train, index) => {
-    const colour = colours[index % colours.length];
+    const defaultColour = defaultColours[index % defaultColours.length];
+    const style = getTrainStyle(train, defaultColour);
 
     let path = '';
     let firstPoint = null;
@@ -179,9 +329,10 @@ function generateSVG(timetable) {
           cx="${x}"
           cy="${y}"
           r="${i === 0 ? 3.5 : 2.5}"
-          fill="${colour}"
+          fill="${style.stroke}"
           stroke="white"
           stroke-width="1"
+          opacity="${style.opacity}"
         />
       `;
     });
@@ -190,9 +341,13 @@ function generateSVG(timetable) {
       elements += `
         <path
           d="${path}"
-          stroke="${colour}"
+          stroke="${style.stroke}"
           fill="none"
-          stroke-width="2"
+          stroke-width="${style.strokeWidth}"
+          stroke-dasharray="${style.dashArray}"
+          opacity="${style.opacity}"
+          stroke-linecap="round"
+          stroke-linejoin="round"
         />
       `;
     }
@@ -205,14 +360,18 @@ function generateSVG(timetable) {
           x="${firstPoint.x + 6}"
           y="${firstPoint.y - 8}"
           font-size="11"
-          fill="${colour}"
+          fill="${style.stroke}"
           font-weight="600"
+          opacity="${style.opacity}"
         >
           ${train.id}
         </text>
       `;
     }
   });
+
+  // Legend
+  elements += renderLegend(width - 220, 60);
 
   return `
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">

@@ -7,6 +7,8 @@
   "trains": [
     {
       "id": "1A01",
+      "style": "normal",
+      "colour": "#005ea5",
       "stops": [
         { "station": "COL", "time": "08:00" },
         { "station": "MAN", "time": "08:10" },
@@ -15,10 +17,20 @@
     },
     {
       "id": "1B02",
+      "style": "express",
       "stops": [
         { "station": "COL", "time": "08:05" },
         { "station": "MAN", "time": "08:20" },
         { "station": "IPS", "time": "08:40" }
+      ]
+    },
+    {
+      "id": "4M10",
+      "style": "freight",
+      "stops": [
+        { "station": "COL", "time": "08:12" },
+        { "station": "MAN", "time": "08:28" },
+        { "station": "IPS", "time": "08:50" }
       ]
     }
   ]
