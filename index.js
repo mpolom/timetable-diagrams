@@ -1,13 +1,24 @@
 const express = require('express');
 const fs = require('fs');
+const path = require('path');
 
 const { normaliseTimetable } = require('./src/core/normalise');
 const { generateSVG } = require('./src/render/svg');
 
 const app = express();
+const PORT = 3000;
+
+app.get('/', (req, res) => {
+  res.send(`
+    <h1>Rail Diagram App</h1>
+    <p>Try the diagram here:</p>
+    <a href="/diagram">/diagram</a>
+  `);
+});
 
 app.get('/diagram', (req, res) => {
-  const raw = JSON.parse(fs.readFileSync('./data/timetable.json'));
+  const filePath = path.join(__dirname, 'data', 'timetable.json');
+  const raw = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
   const timetable = normaliseTimetable(raw);
   const svg = generateSVG(timetable);
@@ -16,6 +27,7 @@ app.get('/diagram', (req, res) => {
   res.send(svg);
 });
 
-app.listen(3000, () => {
-  console.log('Server running at http://localhost:3000/diagram');
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Diagram available at http://localhost:${PORT}/diagram`);
 });
