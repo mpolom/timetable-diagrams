@@ -21,7 +21,8 @@ function getTrainStyle(train, defaultColour) {
         stroke: baseColour,
         strokeWidth: 2,
         dashArray: '8,4',
-        opacity: 1
+        opacity: 1,
+        label: 'Express'
       };
 
     case 'freight':
@@ -29,7 +30,8 @@ function getTrainStyle(train, defaultColour) {
         stroke: train.colour || '#444444',
         strokeWidth: 3,
         dashArray: '2,2',
-        opacity: 0.95
+        opacity: 0.95,
+        label: 'Freight'
       };
 
     case 'empty':
@@ -37,7 +39,8 @@ function getTrainStyle(train, defaultColour) {
         stroke: train.colour || '#666666',
         strokeWidth: 2,
         dashArray: '6,3',
-        opacity: 0.7
+        opacity: 0.7,
+        label: 'Empty stock'
       };
 
     case 'reference':
@@ -45,7 +48,8 @@ function getTrainStyle(train, defaultColour) {
         stroke: train.colour || '#999999',
         strokeWidth: 1.5,
         dashArray: 'none',
-        opacity: 0.5
+        opacity: 0.5,
+        label: 'Reference'
       };
 
     case 'normal':
@@ -54,34 +58,49 @@ function getTrainStyle(train, defaultColour) {
         stroke: baseColour,
         strokeWidth: 2,
         dashArray: 'none',
-        opacity: 1
+        opacity: 1,
+        label: 'Normal'
       };
   }
 }
 
-function renderLegend(x, y) {
-  const legendItems = [
-    {
+function getLegendDefinitions() {
+  return {
+    normal: {
       label: 'Normal',
       style: { stroke: '#005ea5', strokeWidth: 2, dashArray: 'none', opacity: 1 }
     },
-    {
+    express: {
       label: 'Express',
       style: { stroke: '#d4351c', strokeWidth: 2, dashArray: '8,4', opacity: 1 }
     },
-    {
+    freight: {
       label: 'Freight',
       style: { stroke: '#444444', strokeWidth: 3, dashArray: '2,2', opacity: 0.95 }
     },
-    {
+    empty: {
       label: 'Empty stock',
       style: { stroke: '#666666', strokeWidth: 2, dashArray: '6,3', opacity: 0.7 }
     },
-    {
+    reference: {
       label: 'Reference',
       style: { stroke: '#999999', strokeWidth: 1.5, dashArray: 'none', opacity: 0.5 }
     }
-  ];
+  };
+}
+
+function renderLegend(x, y, trains) {
+  const legendDefinitions = getLegendDefinitions();
+
+  const usedStyles = [...new Set(
+    trains.map(train => train.style || 'normal')
+  )].filter(styleName => legendDefinitions[styleName]);
+
+  if (usedStyles.length === 0) {
+    return '';
+  }
+
+  const legendItems = usedStyles.map(styleName => legendDefinitions[styleName]);
 
   const rowHeight = 24;
   const padding = 12;
@@ -156,7 +175,7 @@ function generateSVG(timetable) {
   const margin = {
     top: 50,
     right: 30,
-    bottom: 30,
+    bottom: 50,
     left: 140
   };
 
@@ -240,6 +259,7 @@ function generateSVG(timetable) {
     `;
 
     if (isTenMinute) {
+      // top axis label
       elements += `
         <text
           x="${x}"
@@ -251,8 +271,45 @@ function generateSVG(timetable) {
           ${formatMinutes(t)}
         </text>
       `;
+
+      // bottom axis label
+      elements += `
+        <text
+          x="${x}"
+          y="${margin.top + plotHeight + 18}"
+          font-size="11"
+          text-anchor="middle"
+          fill="#333"
+        >
+          ${formatMinutes(t)}
+        </text>
+      `;
     }
   }
+
+  // Top axis line
+  elements += `
+    <line
+      x1="${margin.left}"
+      y1="${margin.top}"
+      x2="${margin.left + plotWidth}"
+      y2="${margin.top}"
+      stroke="#333"
+      stroke-width="1"
+    />
+  `;
+
+  // Bottom axis line
+  elements += `
+    <line
+      x1="${margin.left}"
+      y1="${margin.top + plotHeight}"
+      x2="${margin.left + plotWidth}"
+      y2="${margin.top + plotHeight}"
+      stroke="#333"
+      stroke-width="1"
+    />
+  `;
 
   // Station lines and labels
   timetable.stations.forEach(station => {
@@ -370,8 +427,8 @@ function generateSVG(timetable) {
     }
   });
 
-  // Legend
-  elements += renderLegend(width - 220, 60);
+  // Dynamic legend
+  elements += renderLegend(width - 220, 60, timetable.trains);
 
   return `
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
