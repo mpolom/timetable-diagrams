@@ -26,7 +26,6 @@ function generateSVG(timetable) {
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
-  // Gather all stop times
   const allTimes = timetable.trains.flatMap(train => train.stops.map(stop => stop.time));
 
   if (allTimes.length === 0) {
@@ -37,17 +36,14 @@ function generateSVG(timetable) {
     `;
   }
 
-  // Auto-fit time axis
   const rawStartTime = Math.min(...allTimes);
   const rawEndTime = Math.max(...allTimes);
 
-  // Add some padding and round nicely
   const startTime = roundDown(rawStartTime - 5, 10);
   const endTime = roundUp(rawEndTime + 5, 10);
 
   const timeRange = endTime - startTime || 1;
 
-  // Station positions
   const stationPositions = timetable.stations.map(s => s.position);
   const minPos = Math.min(...stationPositions);
   const maxPos = Math.max(...stationPositions);
@@ -61,12 +57,10 @@ function generateSVG(timetable) {
 
   let elements = '';
 
-  // Background
   elements += `
     <rect x="0" y="0" width="${width}" height="${height}" fill="white" />
   `;
 
-  // Plot border
   elements += `
     <rect
       x="${margin.left}"
@@ -139,7 +133,6 @@ function generateSVG(timetable) {
     `;
   });
 
-  // Axis title
   elements += `
     <text
       x="${margin.left + plotWidth / 2}"
@@ -152,7 +145,6 @@ function generateSVG(timetable) {
     </text>
   `;
 
-  // Train paths
   const colours = [
     '#005ea5',
     '#d4351c',
@@ -167,6 +159,7 @@ function generateSVG(timetable) {
 
     let path = '';
     let firstPoint = null;
+    let stopCircles = '';
 
     train.stops.forEach((stop, i) => {
       const station = timetable.stations.find(s => s.id === stop.station);
@@ -180,6 +173,17 @@ function generateSVG(timetable) {
       }
 
       path += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+
+      stopCircles += `
+        <circle
+          cx="${x}"
+          cy="${y}"
+          r="${i === 0 ? 3.5 : 2.5}"
+          fill="${colour}"
+          stroke="white"
+          stroke-width="1"
+        />
+      `;
     });
 
     if (path) {
@@ -193,13 +197,16 @@ function generateSVG(timetable) {
       `;
     }
 
+    elements += stopCircles;
+
     if (firstPoint) {
       elements += `
         <text
           x="${firstPoint.x + 6}"
-          y="${firstPoint.y - 6}"
+          y="${firstPoint.y - 8}"
           font-size="11"
           fill="${colour}"
+          font-weight="600"
         >
           ${train.id}
         </text>
