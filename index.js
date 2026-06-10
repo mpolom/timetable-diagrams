@@ -2,8 +2,8 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 
-const { normaliseTimetable } = require('./src/core/normalise');
 const { generateSVG } = require('./src/render/svg');
+const { loadSchedulesForRoute } = require('./src/adapters/networkRailSchedule');
 
 const app = express();
 const PORT = 3000;
@@ -11,23 +11,43 @@ const PORT = 3000;
 app.get('/', (req, res) => {
   res.send(`
     <h1>Rail Diagram App</h1>
-    <p>Try the diagram here:</p>
-    <a href="/diagram">/diagram</a>
+    <p>Try:</p>
+    <ul>
+      <li><a href="/diagram?date=2026-06-10">/diagram?date=2026-06-10</a></li>
+    </ul>
   `);
 });
 
-app.get('/diagram', (req, res) => {
-  const filePath = path.join(__dirname, 'data', 'timetable.json');
-  const raw = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+app.get('/diagram', async (req, res) => {
+  try {
+    const serviceDate = req.query.date || new Date().toISOString().slice(0, 10);
 
-  const timetable = normaliseTimetable(raw);
-  const svg = generateSVG(timetable);
+    const routeConfig = JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, 'data', 'routes', 'geml-col-ipswich.json'),
+        'utf8'
+      )
+    );
 
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.send(svg);
+    const timetable = await loadSchedulesForRoute({
+      scheduleFile: path.join(__dirname, 'data', 'networkrail', 'schedule.json.gz'),
+      routeConfig,
+      serviceDate
+    });
+
+    const svg = generateSVG(timetable);
+
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.send(svg);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(`
+      <h1>Error generating diagram</h1>
+      <pre>${error.message}</pre>
+    `);
+  }
 });
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
-  console.log(`Diagram available at http://localhost:${PORT}/diagram`);
 });
