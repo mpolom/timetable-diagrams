@@ -1,0 +1,9 @@
+{
+  "id": "geml-col-ips",
+  "name": "GEML Colchester to Ipswich",
+  "stations": [
+    { "id": "COL", "name": "Colchester", "tiploc": "CLCHSTR", "position": 0 },
+    { "id": "MAN", "name": "Manningtree", "tiploc": "MANNGTR", "position": 10 },
+    { "id": "IPS", "name": "Ipswich", "tiploc": "IPSWICH", "position": 20 }
+  ]
+}

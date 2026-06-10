@@ -1,4 +1,5 @@
-const fs = require('fs');const fs = requireconst zlib = require('zlib');
+const fs = require('fs');
+const zlib = require('zlib');
 const readline = require('readline');
 
 function parseRailTime(value) {
@@ -32,8 +33,8 @@ function runsOnDate(schedule, serviceDate) {
 
   if (date < start || date > end) return false;
 
-  const jsDay = date.getDay(); // Sun=0 ... Sat=6
-  const index = jsDay === 0 ? 6 : jsDay - 1; // Mon=0 ... Sun=6
+  const jsDay = date.getDay(); // Sun = 0 ... Sat = 6
+  const index = jsDay === 0 ? 6 : jsDay - 1; // Mon = 0 ... Sun = 6
   const days = schedule.schedule_days_runs || '0000000';
 
   return days[index] === '1';
@@ -50,14 +51,9 @@ function buildRouteMap(routeConfig) {
 }
 
 function inferStyle(schedule) {
-  const power = schedule.schedule_segment?.CIF_power_type || '';
-  const category = schedule.schedule_segment?.CIF_train_category || '';
   const atoc = schedule.atoc_code || '';
 
   if (!atoc) return 'freight';
-  if (category === 'XX') return 'normal';
-  if (power.includes('DMU') || power.includes('EMU')) return 'normal';
-
   return 'normal';
 }
 
@@ -92,12 +88,8 @@ async function loadSchedulesForRoute({
     const schedule = record.JsonScheduleV1;
     if (!schedule) continue;
 
-    // v1 keeps Create records only
     if (schedule.transaction_type !== 'Create') continue;
-
-    // v1 skips explicit STP cancellations
     if (schedule.CIF_stp_indicator === 'C') continue;
-
     if (!runsOnDate(schedule, serviceDate)) continue;
 
     const locations = schedule.schedule_segment?.schedule_location || [];
@@ -135,10 +127,10 @@ async function loadSchedulesForRoute({
   }
 
   return {
-    stations: routeConfig.stations.map(s => ({
-      id: s.id,
-      name: s.name,
-      position: s.position
+    stations: routeConfig.stations.map(station => ({
+      id: station.id,
+      name: station.name,
+      position: station.position
     })),
     trains: results
   };

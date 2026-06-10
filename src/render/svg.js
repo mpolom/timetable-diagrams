@@ -169,7 +169,7 @@ function renderLegend(x, y, trains) {
 }
 
 function generateSVG(timetable) {
-  const width = 1400;
+  const width = 2000;
   const height = 800;
 
   const margin = {
